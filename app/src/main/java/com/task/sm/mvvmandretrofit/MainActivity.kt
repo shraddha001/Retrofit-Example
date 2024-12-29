@@ -20,8 +20,12 @@ import com.task.sm.mvvmandretrofit.retrofit.RetrofitClient
 import retrofit2.Retrofit
 
 class MainActivity : AppCompatActivity() {
+    var isOffline = false
     private val viewModel: MyViewModel by viewModels {
-        MyViewModelFactory(MyRepository(RetrofitClient.apiService))
+        MyViewModelFactory(MyRepository(RetrofitClient.apiService), application)
+    }
+    private val networkViewModel: NetworkViewModel by viewModels {
+        MyViewModelFactory(MyRepository(RetrofitClient.apiService), application)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,11 +41,18 @@ class MainActivity : AppCompatActivity() {
             viewModel.getCharges()
         }
 
-        viewModel.getChargesState().observe(this, Observer { resource ->
+        networkViewModel.isNetworkAvailable.observe(this, Observer {
+            isOffline = it
+            viewModel.isOffline = it
+        })
+        viewModel.getChargesState().observe(this) { resource ->
             when (resource) {
                 is Resource.Loading -> {
-                    findViewById<ProgressBar>(R.id.progress).isVisible = true
-                    findViewById<Button>(R.id.mbtn).isVisible = false
+                    findViewById<ProgressBar>(R.id.progress).apply {
+                        findViewById<Button>(R.id.mbtn).isVisible = false
+                        isVisible = true
+                        isActivated = true
+                    }
                 }
 
                 is Resource.Success -> {
@@ -54,10 +65,12 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 is Resource.Error -> {
-                    Toast.makeText(this, "${resource.message}", Toast.LENGTH_LONG).show()
+                    if (isOffline)
+                        Toast.makeText(this, "Network is not available", Toast.LENGTH_LONG).show()
+                    else Toast.makeText(this, "${resource.message}", Toast.LENGTH_LONG).show()
                 }
             }
-        })
+        }
     }
 
 
