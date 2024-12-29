@@ -42,8 +42,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         networkViewModel.isNetworkAvailable.observe(this, Observer {
-            isOffline = it
-            viewModel.isOffline = it
+            isOffline = !it
+            viewModel.isOffline = !it
         })
         viewModel.getChargesState().observe(this) { resource ->
             when (resource) {
@@ -65,7 +65,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 is Resource.Error -> {
-                    if (isOffline)
+                    if (viewModel.isOffline)
                         Toast.makeText(this, "Network is not available", Toast.LENGTH_LONG).show()
                     else Toast.makeText(this, "${resource.message}", Toast.LENGTH_LONG).show()
                 }
